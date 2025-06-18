@@ -153,4 +153,94 @@ def Main_Script():
             except:
                 pass
 
+def Gun_Draw_detection():
+    Zone = 50
+    global landmark_data
+    global Gun_data
+
+    Right_TIme =0
+    Left_TIME=0
+
+    right_HIP  = False
+    LEFT_HIP = False
+    Gun_seen = False
+    Gun_seen_Left = False
+
+    while True:
+        Mitte =None
+        now = time.time()
+        copy_data=[]
+        copy_GUn_data=[]
+
+        with data_lock:
+            if Gun_data:
+                copy_GUn_data=list(Gun_data)
+                Gun_data.clear()
+            if landmark_data:
+                copy_data=list(landmark_data)
+                landmark_data.clear()
+        if copy_GUn_data:
+            Gun_data_2=copy_GUn_data[-1]
+            Mitte= Gun_data_2
+        if copy_data:
+            data=copy_data[-1]
+            data_x_Right_Hand, data_y_Right_Hand, data_Left_Hip_x, data_Left_Hip_y,data_Right_Hip_x,data_Right_Hip_y,data_x_Left_Hand, data_y_Left_Hand ,data_x_Left_Shoulder, data_y_Left_Shoulder ,data_x_Right_Shoulder, data_y_Right_Shoulder, Cen_x ,Cen_y = data
+            
+
+            if (abs(data_x_Right_Hand-(data_Right_Hip_x)) < Zone and abs(data_y_Right_Hand -(data_Right_Hip_y)) < Zone) and not right_HIP:
+                right_HIP = True
+                Right_TIme = time.time()
+            
+            if Mitte is not None and right_HIP:
+                Gun_seen = True
+                print("GunSeen_Right")
+            
+            if right_HIP and (now - Right_TIme < 5) and Gun_seen:
+                if data_y_Right_Hand < Cen_y:
+                    print("Gun_Right_Hand")
+                    right_HIP = False
+                    Gun_seen =False
+            
+            else:
+                right_HIP =False
+                Gun_seen= False
+            
+            if (abs(data_x_Left_Hand - (data_Left_Hip_x)) < Zone and abs(data_y_Left_Hand- (data_Left_Hip_y)) < Zone) and not LEFT_HIP:
+                Left_HIP =True
+                Left_TIME = time.time()
+
+            if Mitte is not None and LEFT_HIP:
+                Gun_seen_Left=True
+                print("GunSeen_Left")
+            
+            if LEFT_HIP and (now -Left_TIME < 5) and Gun_seen_Left:
+                if data_y_Left_Hand < Cen_y:
+                    print("Gun_Left_Hand")
+                    LEFT_HIP = False
+                    Gun_seen_Left = False
+            else:
+                LEFT_HIP =False
+                Gun_seen_Left= False
+        time.sleep(0.01)
+
+main_script_thread= threading.Thread(target = Main_Script, daemon = True)
+main_script_thread.start()
+
+gun_draw_thread = threading.Thread(target=Gun_Draw_detection, daemon = True)
+gun_draw_thread.start()
+while True:
+    if not frame_q.empty():
+        frame =frame_q.get()
+        cv2.imshow('Output', frame)
+    if cv2.waitKey(10) & 0xFF == ord('q'):
+        break
+cap.release()
+cv2.destroyAllWindows()
+
+main_script_thread.join()
+
+cap.release()
+cv2.destroyAllWindows()
+
+            
             
