@@ -16,4 +16,3 @@ class GunDetector:
 
         annotated_image =results[0].plot()
         return gun_centers, annotated_image
-    
